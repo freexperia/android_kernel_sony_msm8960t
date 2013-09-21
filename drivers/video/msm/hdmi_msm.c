@@ -27,6 +27,10 @@
 #include <mach/msm_iomap.h>
 #include <mach/socinfo.h>
 
+#ifdef CONFIG_MHL
+#include <linux/mhl.h>
+#endif
+
 #include "msm_fb.h"
 #include "hdmi_msm.h"
 
@@ -4775,6 +4779,13 @@ static int hdmi_msm_hpd_feature(int on)
 	DEV_INFO("%s: %d\n", __func__, on);
 	if (on) {
 		rc = hdmi_msm_hpd_on();
+#ifdef CONFIG_MHL
+		/* MHL full operation start */
+		if (hdmi_msm_state->pd->coupled_mhl_device)
+			mhl_full_operation(
+				hdmi_msm_state->pd->coupled_mhl_device,
+				TRUE);
+#endif
 	} else {
 		if (external_common_state->hpd_state) {
 			external_common_state->hpd_state = 0;
@@ -4794,6 +4805,13 @@ static int hdmi_msm_hpd_feature(int on)
 		switch_set_state(&external_common_state->sdev, 0);
 		DEV_INFO("%s: hdmi state switched to %d\n", __func__,
 				external_common_state->sdev.state);
+#ifdef CONFIG_MHL
+		/* MHL full operation stop */
+		if (hdmi_msm_state->pd->coupled_mhl_device)
+			mhl_full_operation(
+				hdmi_msm_state->pd->coupled_mhl_device,
+				FALSE);
+#endif
 	}
 
 	return rc;

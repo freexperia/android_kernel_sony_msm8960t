@@ -48,6 +48,10 @@
 #include <mach/msm_bus.h>
 #include <mach/rpm-regulator.h>
 
+#ifdef CONFIG_MHL
+#include <linux/mhl.h>
+#endif
+
 #define MSM_USB_BASE	(motg->regs)
 #define DRIVER_NAME	"msm_otg"
 
@@ -66,6 +70,10 @@
 #define USB_PHY_VDD_DIG_VOL_NONE	0 /*uV */
 #define USB_PHY_VDD_DIG_VOL_MIN	1045000 /* uV */
 #define USB_PHY_VDD_DIG_VOL_MAX	1320000 /* uV */
+
+#ifdef CONFIG_FB_MSM_MHL_SII8334
+#define ID_POLL_COUNT_ID_FLOAT       2
+#endif
 
 static DECLARE_COMPLETION(pmic_vbus_init);
 static struct msm_otg *the_msm_otg;
@@ -1735,6 +1743,63 @@ static bool msm_chg_check_aca_intr(struct msm_otg *motg)
 	return ret;
 }
 
+#ifdef CONFIG_FB_MSM_MHL_SII8334
+static bool msm_chg_check_aca_intr_id_poll(struct msm_otg *motg)
+{
+	struct usb_phy *phy = &motg->phy;
+	bool ret = false;
+	static unsigned int float_count;
+
+	if (!aca_enabled())
+		return ret;
+
+	switch (motg->pdata->phy_type) {
+	case SNPS_28NM_INTEGRATED_PHY:
+		if (ulpi_read(phy, 0x91) & 1) {
+			u32 int_sts;
+
+			dev_dbg(phy->dev, "RID change\n");
+			ulpi_write(phy, 0x01, 0x92);
+
+			int_sts = ulpi_read(phy, 0x87);
+			switch (int_sts & 0x1C) {
+			case 0x08:
+			case 0x0C:
+			case 0x10:
+			case 0x04:
+				if (float_count)
+					dev_dbg(phy->dev,
+						"settled to other than ID_FLOAT"
+						", count=%d\n", float_count);
+				float_count = 0;
+				ret = msm_chg_aca_detect(motg);
+				break;
+			default:
+				float_count++;
+			}
+		} else if (float_count) {
+			float_count++;
+		}
+		if (float_count) {
+			if (float_count < ID_POLL_COUNT_ID_FLOAT) {
+				dev_dbg(phy->dev,
+					"ID_FLOAT, but MHL Device Discovery may"
+					" be ongoing, count=%d\n", float_count);
+			} else {
+				dev_dbg(phy->dev,
+					"settled to ID_FLOAT"
+					", count=%d\n", float_count);
+				float_count = 0;
+				ret = msm_chg_aca_detect(motg);
+			}
+		}
+	default:
+		break;
+	}
+	return ret;
+}
+#endif
+
 static void msm_otg_id_timer_func(unsigned long data)
 {
 	struct msm_otg *motg = (struct msm_otg *) data;
@@ -1750,7 +1815,11 @@ static void msm_otg_id_timer_func(unsigned long data)
 	if (motg->phy.state == OTG_STATE_A_SUSPEND)
 		goto out;
 
+#ifdef CONFIG_FB_MSM_MHL_SII8334
+	if (msm_chg_check_aca_intr_id_poll(motg)) {
+#else
 	if (msm_chg_check_aca_intr(motg)) {
+#endif
 		dev_dbg(motg->phy.dev, "timer: aca work\n");
 		queue_work(system_nrt_wq, &motg->sm_work);
 	}
