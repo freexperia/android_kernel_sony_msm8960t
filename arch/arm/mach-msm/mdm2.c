@@ -139,7 +139,11 @@ static void mdm_do_first_power_on(struct mdm_modem_drv *mdm_drv)
 {
 	int i;
 	int pblrdy;
+#ifdef CONFIG_SONY_QSCFLASHING_UART4
+	if (power_on_count != 1 && mdm_drv->mdm_edload_status != 1) {
+#else
 	if (power_on_count != 1) {
+#endif
 		pr_err("%s: Calling fn when power_on_count != 1\n",
 			   __func__);
 		return;
@@ -226,6 +230,18 @@ static void mdm_power_on_common(struct mdm_modem_drv *mdm_drv)
 	if (mdm_drv->pdata->early_power_on &&
 			(power_on_count == 2))
 		return;
+
+#ifdef CONFIG_SONY_QSCFLASHING_UART4
+	/*
+	 * If we want to enter into edl mode, we should hard reboot the QSC,
+	 * so we use the mdm_do_first_power_on
+	 */
+	if (mdm_drv->mdm_edload_status == 1) {
+		mdm_do_first_power_on(mdm_drv);
+		power_on_count--;
+		return;
+	}
+#endif
 
 	if (power_on_count == 1)
 		mdm_do_first_power_on(mdm_drv);

@@ -5631,7 +5631,11 @@ static struct clk_lookup msm_clocks_8960_common[] __initdata = {
 	CLK_LOOKUP("core_clk",		gsbi8_uart_clk.c, "msm_serial_hs.2"),
 	CLK_LOOKUP("core_clk",		gsbi9_uart_clk.c, "msm_serial_hs.1"),
 	CLK_LOOKUP("core_clk",		gsbi10_uart_clk.c,	""),
+#ifdef CONFIG_SONY_QSCFLASHING_UART4
+	CLK_LOOKUP("core_clk",		gsbi11_uart_clk.c,	"msm_serial_hsl.2"),
+#else
 	CLK_LOOKUP("core_clk",		gsbi11_uart_clk.c,	""),
+#endif
 	CLK_LOOKUP("core_clk",		gsbi12_uart_clk.c,	""),
 	CLK_LOOKUP("core_clk",		gsbi1_qup_clk.c,	"spi_qsd.0"),
 	CLK_LOOKUP("core_clk",		gsbi2_qup_clk.c,	""),
@@ -5686,7 +5690,11 @@ static struct clk_lookup msm_clocks_8960_common[] __initdata = {
 	CLK_LOOKUP("iface_clk",		gsbi8_p_clk.c,	"msm_serial_hs.2"),
 	CLK_LOOKUP("iface_clk",		gsbi9_p_clk.c,  "msm_serial_hs.1"),
 	CLK_LOOKUP("iface_clk",		gsbi10_p_clk.c,		"qup_i2c.10"),
+#ifdef CONFIG_SONY_QSCFLASHING_UART4
+	CLK_LOOKUP("iface_clk",		gsbi11_p_clk.c,	"msm_serial_hsl.2"),
+#else
 	CLK_LOOKUP("iface_clk",		gsbi11_p_clk.c,		""),
+#endif
 	CLK_LOOKUP("iface_clk",		gsbi12_p_clk.c,		"qup_i2c.12"),
 	CLK_LOOKUP("iface_clk",		tsif_p_clk.c,		""),
 	CLK_LOOKUP("ref_clk",	tsif_ref_clk.c,	"msm_tspp.0"),

@@ -2628,6 +2628,12 @@ config MSM_CPU_PWRCTL
 	  stand alone power collapse operation. Selecting this option
 	  ensures that they are always off.
 
+config SONY_QSCFLASHING_UART4
+	bool "Support QSC1215 Image Upgrade"
+	default n
+	help
+	  This enables support for QSC1215 Image Upgrade.
+
 config MSM_USE_USER_ACCESSIBLE_TIMERS
 	bool "Enables mapping an MSM timer counter page to user space."
 	depends on ARM_USE_USER_ACCESSIBLE_TIMERS
